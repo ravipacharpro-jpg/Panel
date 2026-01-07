@@ -1,16 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>API Verification</title>
-    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
 </head>
-<body style="background:#000; color:#fff; font-family:monospace;">
-    <div id="status">INITIALIZING...</div>
+<body style="background:#000; color:#fff;">
+    <pre id="json_output">{"status":false,"message":"INITIALIZING"}</pre>
 
     <script>
-        // --- APNI FIREBASE CONFIG YAHAN DALEIN ---
         const firebaseConfig = {
             apiKey: "AIzaSyDRpY5f4_SPuuspfed3UkxG99gByr9rqH8",
             authDomain: "host-panel-fd943.firebaseapp.com",
@@ -22,18 +19,29 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // URL Params: ?key=MYKEY&admin=ADMINUID&hwid=DEVICEID
         const params = new URLSearchParams(window.location.search);
         const userKey = params.get('key');
         const adminId = params.get('admin');
         const hwid = params.get('hwid');
 
+        function sendRes(status, msg, exp = "") {
+            const out = {
+                "status": status,
+                "message": msg,
+                "data": {
+                    "token": "VIP_AUTH_OK",
+                    "rng": Math.floor(Date.now() / 1000),
+                    "EXP": exp
+                }
+            };
+            document.body.innerText = JSON.stringify(out);
+        }
+
         async function check() {
             if(!userKey || !adminId || !hwid) {
-                document.body.innerText = "INVALID_PARAMETERS";
+                sendRes(false, "INVALID_REQUEST");
                 return;
             }
-
             try {
                 const snap = await db.collection("keys")
                     .where("key", "==", userKey)
@@ -41,39 +49,36 @@
                     .get();
 
                 if (snap.empty) {
-                    document.body.innerText = "INVALID_KEY";
+                    sendRes(false, "KEY_NOT_FOUND");
                     return;
                 }
 
                 const doc = snap.docs[0];
                 const data = doc.data();
 
-                // 1. Status Check
                 if (data.status !== 'active') {
-                    document.body.innerText = "KEY_BANNED";
+                    sendRes(false, "KEY_BANNED");
                     return;
                 }
 
-                // 2. Expiry Check
-                if (data.expiry.toDate() < new Date()) {
-                    document.body.innerText = "KEY_EXPIRED";
+                const expDate = data.expiry.toDate();
+                if (expDate < new Date()) {
+                    sendRes(false, "KEY_EXPIRED");
                     return;
                 }
 
-                // 3. HWID / Device Limit Check
                 let devices = data.devicesUsed || [];
                 if (devices.includes(hwid)) {
-                    document.body.innerText = "OK"; // Pehle se registered hai
+                    sendRes(true, "OK", expDate.toLocaleDateString());
                 } else if (devices.length < data.limit) {
                     devices.push(hwid);
                     await db.collection("keys").doc(doc.id).update({ devicesUsed: devices });
-                    document.body.innerText = "OK"; // Naya device register ho gaya
+                    sendRes(true, "OK", expDate.toLocaleDateString());
                 } else {
-                    document.body.innerText = "DEVICE_LIMIT_EXCEEDED";
+                    sendRes(false, "DEVICE_LIMIT_REACHED");
                 }
-
             } catch (e) {
-                document.body.innerText = "SERVER_ERROR";
+                sendRes(false, "SERVER_ERROR");
             }
         }
         check();
