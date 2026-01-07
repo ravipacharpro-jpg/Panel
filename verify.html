@@ -1,14 +1,16 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <title>API Verification</title>
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
 </head>
-<body>
-    <div id="status">WAITING</div>
+<body style="background:#000; color:#fff; font-family:monospace;">
+    <div id="status">INITIALIZING...</div>
 
     <script>
-        // --- APNI PURANI CONFIG YAHAN DALEIN ---
+        // --- APNI FIREBASE CONFIG YAHAN DALEIN ---
         const firebaseConfig = {
             apiKey: "AIzaSyDRpY5f4_SPuuspfed3UkxG99gByr9rqH8",
             authDomain: "host-panel-fd943.firebaseapp.com",
@@ -20,57 +22,61 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // URL se key aur adminId nikalne ke liye
-        const urlParams = new URLSearchParams(window.location.search);
-        const userKey = urlParams.get('key');
-        const rootAdmin = urlParams.get('admin');
-        const deviceID = urlParams.get('hwid');
+        // URL Params: ?key=MYKEY&admin=ADMINUID&hwid=DEVICEID
+        const params = new URLSearchParams(window.location.search);
+        const userKey = params.get('key');
+        const adminId = params.get('admin');
+        const hwid = params.get('hwid');
 
-        async function checkKey() {
-            const statusEl = document.getElementById('status');
-            if(!userKey || !rootAdmin) {
-                document.body.innerText = "INVALID_REQUEST";
+        async function check() {
+            if(!userKey || !adminId || !hwid) {
+                document.body.innerText = "INVALID_PARAMETERS";
                 return;
             }
 
-            const snap = await db.collection("keys")
-                .where("key", "==", userKey)
-                .where("rootAdminId", "==", rootAdmin)
-                .get();
+            try {
+                const snap = await db.collection("keys")
+                    .where("key", "==", userKey)
+                    .where("rootAdminId", "==", adminId)
+                    .get();
 
-            if (snap.empty) {
-                document.body.innerText = "NOT_FOUND";
-            } else {
-                const data = snap.docs[0].data();
-                const docId = snap.docs[0].id;
-                const now = new Date();
+                if (snap.empty) {
+                    document.body.innerText = "INVALID_KEY";
+                    return;
+                }
+
+                const doc = snap.docs[0];
+                const data = doc.data();
 
                 // 1. Status Check
-                if(data.status !== 'active') {
-                    document.body.innerText = "BANNED";
+                if (data.status !== 'active') {
+                    document.body.innerText = "KEY_BANNED";
                     return;
                 }
 
                 // 2. Expiry Check
-                if(data.expiry.toDate() < now) {
-                    document.body.innerText = "EXPIRED";
+                if (data.expiry.toDate() < new Date()) {
+                    document.body.innerText = "KEY_EXPIRED";
                     return;
                 }
 
-                // 3. HWID Check
+                // 3. HWID / Device Limit Check
                 let devices = data.devicesUsed || [];
-                if(devices.includes(deviceID)) {
-                    document.body.innerText = "OK";
-                } else if(devices.length < data.limit) {
-                    devices.push(deviceID);
-                    await db.collection("keys").doc(docId).update({ devicesUsed: devices });
-                    document.body.innerText = "OK";
+                if (devices.includes(hwid)) {
+                    document.body.innerText = "OK"; // Pehle se registered hai
+                } else if (devices.length < data.limit) {
+                    devices.push(hwid);
+                    await db.collection("keys").doc(doc.id).update({ devicesUsed: devices });
+                    document.body.innerText = "OK"; // Naya device register ho gaya
                 } else {
-                    document.body.innerText = "DEVICE_LIMIT_REACHED";
+                    document.body.innerText = "DEVICE_LIMIT_EXCEEDED";
                 }
+
+            } catch (e) {
+                document.body.innerText = "SERVER_ERROR";
             }
         }
-        checkKey();
+        check();
     </script>
 </body>
 </html>
