@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+</head>
+<body>
+    <div id="status">WAITING</div>
+
+    <script>
+        // --- APNI PURANI CONFIG YAHAN DALEIN ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDRpY5f4_SPuuspfed3UkxG99gByr9rqH8",
+            authDomain: "host-panel-fd943.firebaseapp.com",
+            projectId: "host-panel-fd943",
+            storageBucket: "host-panel-fd943.firebasestorage.app",
+            messagingSenderId: "75573266168",
+            appId: "1:75573266168:web:1db02b2665c4431e495d0d"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // URL se key aur adminId nikalne ke liye
+        const urlParams = new URLSearchParams(window.location.search);
+        const userKey = urlParams.get('key');
+        const rootAdmin = urlParams.get('admin');
+        const deviceID = urlParams.get('hwid');
+
+        async function checkKey() {
+            const statusEl = document.getElementById('status');
+            if(!userKey || !rootAdmin) {
+                document.body.innerText = "INVALID_REQUEST";
+                return;
+            }
+
+            const snap = await db.collection("keys")
+                .where("key", "==", userKey)
+                .where("rootAdminId", "==", rootAdmin)
+                .get();
+
+            if (snap.empty) {
+                document.body.innerText = "NOT_FOUND";
+            } else {
+                const data = snap.docs[0].data();
+                const docId = snap.docs[0].id;
+                const now = new Date();
+
+                // 1. Status Check
+                if(data.status !== 'active') {
+                    document.body.innerText = "BANNED";
+                    return;
+                }
+
+                // 2. Expiry Check
+                if(data.expiry.toDate() < now) {
+                    document.body.innerText = "EXPIRED";
+                    return;
+                }
+
+                // 3. HWID Check
+                let devices = data.devicesUsed || [];
+                if(devices.includes(deviceID)) {
+                    document.body.innerText = "OK";
+                } else if(devices.length < data.limit) {
+                    devices.push(deviceID);
+                    await db.collection("keys").doc(docId).update({ devicesUsed: devices });
+                    document.body.innerText = "OK";
+                } else {
+                    document.body.innerText = "DEVICE_LIMIT_REACHED";
+                }
+            }
+        }
+        checkKey();
+    </script>
+</body>
+</html>
