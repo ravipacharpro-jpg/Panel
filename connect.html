@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+</head>
+<body>
+    <script>
+        // --- APNI FIREBASE CONFIG YAHAN RAKHEIN ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDRpY5f4_SPuuspfed3UkxG99gByr9rqH8",
+            authDomain: "host-panel-fd943.firebaseapp.com",
+            projectId: "host-panel-fd943",
+            storageBucket: "host-panel-fd943.firebasestorage.app",
+            messagingSenderId: "75573266168",
+            appId: "1:75573266168:web:1db02b2665c4431e495d0d"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        const params = new URLSearchParams(window.location.search);
+        const userKey = params.get('key');
+        const adminId = params.get('admin');
+        const hwid = params.get('hwid');
+
+        function sendJSON(status, msg, exp = "N/A") {
+            const out = {
+                "status": status,
+                "message": msg,
+                "data": { "token": "AUTH_OK", "rng": Math.floor(Date.now()/1000), "EXP": exp }
+            };
+            document.body.innerText = JSON.stringify(out);
+        }
+
+        async function verify() {
+            if(!userKey || !adminId || !hwid) {
+                sendJSON(false, "INVALID_REQUEST");
+                return;
+            }
+            try {
+                const snap = await db.collection("keys")
+                    .where("key", "==", userKey)
+                    .where("rootAdminId", "==", adminId)
+                    .get();
+
+                if (snap.empty) {
+                    sendJSON(false, "KEY_NOT_FOUND");
+                    return;
+                }
+
+                const doc = snap.docs[0];
+                const data = doc.data();
+
+                if (data.status !== 'active') { sendJSON(false, "KEY_BANNED"); return; }
+
+                const expDate = data.expiry.toDate();
+                if (expDate < new Date()) { sendJSON(false, "KEY_EXPIRED"); return; }
+
+                let devices = data.devicesUsed || [];
+                if (devices.includes(hwid)) {
+                    sendJSON(true, "OK", expDate.toLocaleDateString());
+                } else if (devices.length < data.limit) {
+                    devices.push(hwid);
+                    await db.collection("keys").doc(doc.id).update({ devicesUsed: devices });
+                    sendJSON(true, "OK", expDate.toLocaleDateString());
+                } else {
+                    sendJSON(false, "DEVICE_LIMIT_REACHED");
+                }
+            } catch (e) { sendJSON(false, "SERVER_ERROR"); }
+        }
+        verify();
+    </script>
+</body>
+</html>
