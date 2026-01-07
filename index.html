@@ -238,58 +238,270 @@
                 const r = document.getElementById('new-role').value;
                 alert("Please go to Firebase Console > Auth and add " + u + "@panel.com first. Then manually add the UID in Firestore 'users' collection with role: " + r);
             }
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VIP NEON PANEL v2026</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root { --blue: #00f3ff; --pink: #ff00ff; --green: #39ff14; --purple: #bc13fe; --bg: #080808; --card: #121212; }
+        
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; flex-direction: row; height: 100vh; overflow: hidden; }
+
+        /* Sidebar Responsive Design */
+        .sidebar { width: 260px; background: #000; border-right: 1px solid var(--blue); padding: 20px; display: flex; flex-direction: column; transition: 0.3s; z-index: 1000; }
+        .brand-name { font-size: 22px; font-weight: bold; color: var(--blue); text-shadow: 0 0 10px var(--blue); margin-bottom: 30px; text-align: center; }
+        .nav-link { padding: 12px; cursor: pointer; border-radius: 8px; transition: 0.3s; margin: 5px 0; color: #888; display: flex; align-items: center; text-decoration: none; }
+        .nav-link:hover, .active-nav { background: rgba(0, 243, 255, 0.1); color: var(--blue); border-left: 3px solid var(--blue); }
+        .nav-link i { margin-right: 15px; width: 20px; }
+
+        /* Main Area */
+        .main { flex: 1; padding: 20px; overflow-y: auto; background: radial-gradient(circle at top right, rgba(0, 243, 255, 0.05), transparent); width: 100%; }
+        .card { background: var(--card); padding: 20px; border-radius: 15px; border: 1px solid #222; margin-bottom: 20px; }
+        
+        /* Stats Grid */
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .stat-box { text-align: center; padding: 15px; }
+        .stat-box h3 { font-size: 11px; color: #666; margin: 0; }
+        .stat-box p { font-size: 20px; margin: 5px 0; font-weight: bold; color: var(--blue); }
+
+        /* Form Inputs */
+        input, select { width: 100%; padding: 12px; margin: 10px 0; background: #000; border: 1px solid #333; color: white; border-radius: 8px; outline: none; font-size: 14px; }
+        input:focus { border-color: var(--pink); box-shadow: 0 0 10px var(--pink); }
+        
+        .btn { width: 100%; padding: 14px; background: transparent; border: 1px solid var(--blue); color: var(--blue); cursor: pointer; border-radius: 8px; font-weight: bold; text-transform: uppercase; margin-top: 10px; font-size: 14px; transition: 0.3s; }
+        .btn:hover { background: var(--blue); color: black; box-shadow: 0 0 20px var(--blue); }
+
+        /* Responsive Table */
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 500px; }
+        th { text-align: left; color: #555; padding: 10px; border-bottom: 1px solid #222; }
+        td { padding: 12px 10px; border-bottom: 1px solid #111; }
+
+        /* Login Screen */
+        #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 20px; }
+
+        /* Mobile Adjustments */
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            .sidebar { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--blue); padding: 10px; flex-direction: row; overflow-x: auto; white-space: nowrap; }
+            .brand-name { margin-bottom: 0; margin-right: 20px; font-size: 18px; display: none; }
+            .nav-link { margin: 0 5px; padding: 8px 12px; font-size: 13px; }
+            .nav-link i { margin-right: 5px; }
+            .main { padding: 15px; }
+            .stats { grid-template-columns: 1fr 1fr; }
+            .grid-2 { grid-template-columns: 1fr !important; }
+        }
+
+        .tg-btn { position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px; background: #0088cc; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 22px; color: white; box-shadow: 0 0 15px #0088cc; z-index: 999; text-decoration: none; border: 2px solid white; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <!-- Login -->
+    <div id="login-overlay">
+        <div class="card" style="width: 100%; max-width: 320px; text-align: center; border-color: var(--blue);">
+            <h2 style="color: var(--blue); text-shadow: 0 0 10px var(--blue);">VIP LOGIN</h2>
+            <input type="text" id="log-user" placeholder="Username">
+            <input type="password" id="log-pass" placeholder="Password">
+            <button class="btn" onclick="app.login()">ENTER PANEL</button>
+        </div>
+    </div>
+
+    <!-- Sidebar / Top Nav for Mobile -->
+    <div class="sidebar">
+        <div id="disp-brand" class="brand-name">HEX PANEL</div>
+        <div class="nav-link active-nav" onclick="app.tab('dash', this)"><i class="fas fa-home"></i> Dash</div>
+        <div class="nav-link" onclick="app.tab('keys', this)"><i class="fas fa-key"></i> Keys</div>
+        <div class="nav-link owner-only hidden" onclick="app.tab('admin', this)"><i class="fas fa-user-shield"></i> Staff</div>
+        <div class="nav-link" onclick="app.tab('settings', this)"><i class="fas fa-cog"></i> Setup</div>
+        <div class="nav-link" onclick="app.logout()" style="color: #ff4444;"><i class="fas fa-power-off"></i></div>
+    </div>
+
+    <!-- Main -->
+    <div class="main">
+        <!-- Dashboard -->
+        <div id="tab-dash">
+            <h2 style="margin-top:0;">Hello, <span id="disp-user" style="color: var(--pink);">...</span></h2>
+            <div class="stats">
+                <div class="card stat-box"><h3>Role</h3><p id="disp-role">-</p></div>
+                <div class="card stat-box"><h3>Keys</h3><p id="disp-keys">0</p></div>
+            </div>
+            <div class="card">
+                <h3 style="color: var(--green); margin:0; font-size:16px;">System Firewall</h3>
+                <p style="font-size: 12px; color: #888;">All Protections (Anti-GG, Canary) are ACTIVE ✅</p>
+            </div>
+        </div>
+
+        <!-- Key Manager -->
+        <div id="tab-keys" class="hidden">
+            <div class="card">
+                <h3 style="color: var(--blue); margin-top:0;">Generate Key</h3>
+                <div class="grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div>
+                        <label style="font-size:11px; color:#666;">Customer Name</label>
+                        <input type="text" id="key-name" placeholder="Name">
+                    </div>
+                    <div>
+                        <label style="font-size:11px; color:#666;">Time Limit</label>
+                        <select id="key-time">
+                            <option value="2h">2 Hours</option>
+                            <option value="1d">1 Day</option>
+                            <option value="30d">30 Days</option>
+                            <option value="LIFETIME">Lifetime</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size:11px; color:#666;">Device Limit (Custom)</label>
+                        <input type="number" id="key-limit" value="1" placeholder="Ex: 10 or 100">
+                    </div>
+                    <div class="owner-admin-only hidden" style="display: flex; align-items: center; gap:5px; margin-top:15px;">
+                        <input type="checkbox" id="key-master" style="width: 20px; margin:0;"> <label style="color: gold; font-size:12px;">Master Key</label>
+                    </div>
+                </div>
+                <button class="btn" onclick="app.generateKey()">Create Key</button>
+            </div>
+
+            <div class="card">
+                <h3>Active Keys List</h3>
+                <div class="table-container">
+                    <table>
+                        <thead><tr><th>Name</th><th>Key</th><th>Limit</th><th>Status</th><th>Action</th></tr></thead>
+                        <tbody id="key-list"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin -->
+        <div id="tab-admin" class="hidden">
+            <div class="card">
+                <h3>Link Staff Account</h3>
+                <input type="text" id="new-user" placeholder="Username">
+                <select id="new-role">
+                    <option value="admin">Admin</option>
+                    <option value="reseller">Reseller</option>
+                </select>
+                <button class="btn" onclick="app.createAccount()">Add to Panel</button>
+            </div>
+        </div>
+
+        <!-- Settings -->
+        <div id="tab-settings" class="hidden">
+            <div class="card">
+                <h3>Branding</h3>
+                <input type="text" id="set-brand" placeholder="Brand Name">
+                <input type="text" id="set-tg" placeholder="Telegram Link">
+                <button class="btn" onclick="app.saveSettings()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <a href="#" id="tg-support" class="tg-btn" target="_blank"><i class="fab fa-telegram-plane"></i></a>
+
+    <!-- Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
+    <script>
+        // --- YOUR CONFIG (Don't Change) ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDRpY5f4_SPuuspfed3UkxG99gByr9rqH8",
+            authDomain: "host-panel-fd943.firebaseapp.com",
+            projectId: "host-panel-fd943",
+            storageBucket: "host-panel-fd943.firebasestorage.app",
+            messagingSenderId: "75573266168",
+            appId: "1:75573266168:web:1db02b2665c4431e495d0d"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        const app = {
+            user: null,
+
+            login: function() {
+                const u = document.getElementById('log-user').value;
+                const p = document.getElementById('log-pass').value;
+                auth.signInWithEmailAndPassword(u + "@panel.com", p).catch(e => alert(e.message));
+            },
+
+            logout: function() { auth.signOut().then(() => location.reload()); },
+
+            tab: function(t, el) {
+                ['dash','keys','admin','settings'].forEach(id => document.getElementById('tab-'+id).classList.add('hidden'));
+                document.getElementById('tab-'+t).classList.remove('hidden');
+                document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active-nav'));
+                el.classList.add('active-nav');
+            },
+
+            generateKey: function() {
+                const name = document.getElementById('key-name').value;
+                const limit = document.getElementById('key-limit').value;
+                const isMaster = document.getElementById('key-master').checked;
+                if(!name || !limit) return alert("Fields Khali Hain!");
+
+                const key = `${name.toUpperCase()}-${isMaster ? 'MASTER' : 'VIP'}-${Math.floor(1000+Math.random()*9000)}`;
+                db.collection("keys").add({
+                    key: key, customer: name,
+                    type: isMaster ? "master" : "standard",
+                    duration: document.getElementById('key-time').value,
+                    limit: parseInt(limit),
+                    adminId: this.user.uid, status: "active",
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                }).then(() => { alert("Success! Key: " + key); document.getElementById('key-name').value = ""; });
+            },
+
+            saveSettings: function() {
+                const b = document.getElementById('set-brand').value;
+                const t = document.getElementById('set-tg').value;
+                db.collection("users").doc(this.user.uid).update({ brandName: b, telegram: t }).then(() => alert("Saved!"));
+            }
         };
 
-        // Auth Listener
         auth.onAuthStateChanged(async (u) => {
             if (u) {
                 app.user = u;
                 document.getElementById('login-overlay').style.display = 'none';
-                
                 const doc = await db.collection("users").doc(u.uid).get();
-                if(!doc.exists) {
-                    alert("Account found but not linked to Panel Database. Contact Owner.");
-                    return;
-                }
-                
                 const data = doc.data();
-                app.userData = data;
                 
-                // Display Info
-                document.getElementById('disp-user').innerText = data.username || "Staff";
+                document.getElementById('disp-user').innerText = data.username;
                 document.getElementById('disp-role').innerText = data.role.toUpperCase();
                 document.getElementById('disp-brand').innerText = data.brandName || "VIP PANEL";
                 
+                if(data.role === 'owner' || data.role === 'admin') {
+                    document.querySelectorAll('.owner-admin-only').forEach(e => e.classList.remove('hidden'));
+                    if(data.role === 'owner') document.querySelectorAll('.owner-only').forEach(e => e.classList.remove('hidden'));
+                }
+
+                // Support Logic
                 if(data.role === 'owner') {
-                    document.querySelectorAll('.owner-only').forEach(el => el.classList.remove('hidden'));
-                    document.querySelectorAll('.owner-admin-only').forEach(el => el.classList.remove('hidden'));
                     document.getElementById('tg-support').href = data.telegram || "#";
-                } else if(data.role === 'admin') {
-                    document.querySelectorAll('.owner-admin-only').forEach(el => el.classList.remove('hidden'));
-                    // Admins see Owner's TG
-                    const ownerSnap = await db.collection("users").where("role", "==", "owner").limit(1).get();
-                    if(!ownerSnap.empty) document.getElementById('tg-support').href = ownerSnap.docs[0].data().telegram;
                 } else {
-                    // Resellers see their Admin's TG
                     const up = await db.collection("users").doc(data.createdBy || "OWNER").get();
                     document.getElementById('tg-support').href = up.exists ? up.data().telegram : "#";
                 }
 
-                // Load My Keys
+                // Key List
                 db.collection("keys").where("adminId", "==", u.uid).onSnapshot(snap => {
+                    document.getElementById('disp-keys').innerText = snap.size;
                     const list = document.getElementById('key-list');
                     list.innerHTML = "";
-                    document.getElementById('disp-keys').innerText = snap.size;
                     snap.forEach(d => {
                         const k = d.data();
                         list.innerHTML += `<tr>
                             <td>${k.customer}</td>
-                            <td style="color:var(--blue); font-family:monospace">${k.key}</td>
-                            <td><span class="status-badge ${k.status === 'active' ? 'active-key' : 'banned-key'}">${k.status}</span></td>
+                            <td style="color:var(--blue)">${k.key}</td>
                             <td>${k.limit}</td>
-                            <td>
-                                <i class="fas fa-trash" onclick="if(confirm('Delete?')) db.collection('keys').doc('${d.id}').delete()" style="color:red; cursor:pointer"></i>
-                            </td>
+                            <td style="color:${k.status=='active'?'var(--green)':'red'}">${k.status}</td>
+                            <td><i class="fas fa-trash" onclick="db.collection('keys').doc('${d.id}').delete()" style="color:red"></i></td>
                         </tr>`;
                     });
                 });
