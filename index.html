@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VIP ULTIMATE PANEL v28</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root { --blue: #00f3ff; --pink: #ff00ff; --green: #39ff14; --red: #ff4444; --orange: #ffa500; --bg: #050505; --card: #121212; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        .header { background: #000; padding: 12px; border-bottom: 1px solid var(--blue); text-align: center; box-shadow: 0 0 15px rgba(0,243,255,0.2); }
+        .brand-name { font-size: 18px; font-weight: bold; color: var(--blue); text-shadow: 0 0 10px var(--blue); }
+        .main { flex: 1; padding: 15px; overflow-y: auto; padding-bottom: 100px; width: 100%; }
+        .card { background: var(--card); padding: 15px; border-radius: 12px; border: 1px solid #222; margin-bottom: 15px; border-left: 3px solid transparent; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .stat-box { background: #111; padding: 10px; border-radius: 10px; text-align: center; border: 1px solid #222; }
+        .stat-box h3 { font-size: 10px; color: #777; margin: 0; }
+        .stat-box p { font-size: 16px; margin: 5px 0 0; font-weight: bold; color: var(--blue); }
+        .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: #000; border-top: 1px solid var(--blue); display: flex; justify-content: space-around; padding: 8px 0; z-index: 2000; }
+        .nav-item { color: #444; text-align: center; cursor: pointer; flex: 1; display: flex; flex-direction: column; align-items: center; transition: 0.3s; }
+        .nav-item i { font-size: 18px; margin-bottom: 3px; }
+        .nav-item span { font-size: 9px; }
+        .nav-item.active { color: var(--blue); text-shadow: 0 0 10px var(--blue); }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; background: #000; border: 1px solid #333; color: white; border-radius: 8px; font-size: 14px; outline: none; }
+        .btn { width: 100%; padding: 12px; background: transparent; border: 1px solid var(--blue); color: var(--blue); cursor: pointer; border-radius: 10px; font-weight: bold; font-size: 13px; text-transform: uppercase; margin-top: 5px; }
+        .btn:active { background: var(--blue); color: #000; }
+        .table-container { overflow-x: auto; margin-top: 10px; }
+        table { width: 100%; border-collapse: collapse; font-size: 11px; min-width: 500px; }
+        th { text-align: left; color: #555; padding: 8px; border-bottom: 1px solid #333; }
+        td { padding: 10px 8px; border-bottom: 1px solid #1a1a1a; }
+        #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .chart-wrapper { height: 140px; width: 100%; }
+        
+        /* SECURITY UI DESIGN */
+        .sec-grid { display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 10px; }
+        .sec-item { display: flex; justify-content: space-between; align-items: center; background: rgba(0,255,0,0.03); padding: 10px; border-radius: 8px; border: 1px solid rgba(57, 255, 20, 0.2); }
+        .sec-item span { font-size: 11px; font-family: monospace; color: #aaa; }
+        .sec-tag { font-size: 10px; font-weight: bold; color: var(--green); text-shadow: 0 0 5px var(--green); animation: blink 2s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        
+        .tg-btn { position: fixed; bottom: 85px; right: 20px; width: 50px; height: 50px; background: #0088cc; border-radius: 50%; display: none; justify-content: center; align-items: center; color: white; font-size: 24px; text-decoration: none; border: 2px solid white; z-index: 2000; }
+        .price-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid #222; }
+        .price-row input { width: 80px; margin: 0; padding: 5px; text-align: center; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div id="login-overlay">
+        <div class="card" style="width: 100%; max-width: 320px; text-align: center; border-color: var(--blue);">
+            <h2 style="color: var(--blue);">VIP LOGIN</h2>
+            <input type="text" id="log-user" placeholder="Username">
+            <input type="password" id="log-pass" placeholder="Password">
+            <button class="btn" onclick="app.login()">AUTHORIZE</button>
+        </div>
+    </div>
+
+    <div class="header"><div id="disp-brand-top" class="brand-name">VIP PANEL</div></div>
+
+    <div class="nav-bar">
+        <div class="nav-item active" onclick="app.tab('dash', this)"><i class="fas fa-home"></i><span>Home</span></div>
+        <div class="nav-item" onclick="app.tab('keys', this)"><i class="fas fa-key"></i><span>Keys</span></div>
+        <div class="nav-item owner-admin-only hidden" onclick="app.tab('staff', this)"><i class="fas fa-users-cog"></i><span>Staff</span></div>
+        <div class="nav-item" onclick="app.tab('logs', this)"><i class="fas fa-history"></i><span>Logs</span></div>
+        <div class="nav-item" onclick="app.tab('settings', this)"><i class="fas fa-cog"></i><span>Setup</span></div>
+    </div>
+
+    <div class="main">
+        <!-- Dash -->
+        <div id="tab-dash">
+            <h2 style="margin:0;">Hi, <span id="disp-user" style="color: var(--pink);">...</span></h2>
+            <div class="stats-grid">
+                <div class="stat-box"><h3>Credits</h3><p id="disp-bal">0</p></div>
+                <div class="stat-box"><h3>Account</h3><p id="disp-role">-</p></div>
+            </div>
+            
+            <div class="card" style="border-left-color: var(--blue);"><h3 style="font-size:10px; color:var(--blue); margin:0 0 10px 0;">KEY ACTIVITY PULSE</h3><div class="chart-wrapper"><canvas id="keysChart"></canvas></div></div>
+            <div class="card owner-admin-only hidden" style="border-left-color: var(--pink);"><h3 style="font-size:10px; color:var(--pink); margin:0 0 10px 0;">STAFF NETWORK PULSE</h3><div class="chart-wrapper"><canvas id="staffChart"></canvas></div></div>
+
+            <!-- FUTURISTIC SECURITY PANEL -->
+            <div class="card" style="border-left-color: var(--green);">
+                <h3 style="font-size:10px; color:var(--green); margin:0 0 10px 0;"><i class="fas fa-user-shield"></i> SYSTEM BYPASS PROTECTION</h3>
+                <div class="sec-grid">
+                    <div class="sec-item"><span>ANTI-HTTPCANARY PROTECTION</span><span class="sec-tag">SECURED</span></div>
+                    <div class="sec-item"><span>ANTI-TERMUX EMULATION</span><span class="sec-tag">SECURED</span></div>
+                    <div class="sec-item"><span>ANTI-GAMEGUARDIAN MEMORY</span><span class="sec-tag">SECURED</span></div>
+                    <div class="sec-item"><span>FIREWALL VERSION</span><span style="color:var(--blue); font-size:9px;">v2.0.26-ALPHA</span></div>
+                </div>
+            </div>
+
+            <div class="card" id="expiry-box" style="border-left-color: orange; display:none;"><p style="font-size:11px; margin:0; color:orange;">Validity: <span id="disp-expiry"></span></p></div>
+        </div>
+
+        <!-- Keys -->
+        <div id="tab-keys" class="hidden">
+            <div class="card" style="border-left-color: var(--blue);">
+                <h3>Generate VIP Key</h3>
+                <input type="text" id="key-name" placeholder="Exact Key Name">
+                <input type="number" id="key-limit" value="1" placeholder="Device Limit">
+                <select id="key-time" onchange="app.checkPrice()">
+                    <option value="5h">5 Hours</option><option value="1d">1 Day</option><option value="7d">7 Days</option>
+                    <option value="14d">14 Days</option><option value="30d">30 Days</option><option value="60d">60 Days</option>
+                    <option id="opt-lifetime" value="LIFETIME">Lifetime</option>
+                </select>
+                <div id="price-display" style="font-size: 11px; color: var(--pink); margin-bottom: 5px; font-weight: bold;">Cost: 0 Credits</div>
+                <button class="btn" onclick="app.generateKey()">Create & Copy</button>
+            </div>
+            <div class="card"><h3>Key Records</h3><div class="table-container"><table><thead><tr><th>Name/Key</th><th>Login</th><th>Time</th><th>By</th><th>Action</th></tr></thead><tbody id="key-list"></tbody></table></div></div>
+        </div>
+
+        <!-- Staff -->
+        <div id="tab-staff" class="hidden">
+            <div class="card" style="border-left-color: var(--pink);">
+                <h3>Add New Staff</h3>
+                <input type="text" id="new-user" placeholder="Username">
+                <input type="password" id="new-pass" placeholder="Password">
+                <select id="new-role"></select>
+                <select id="new-expiry"><option value="1">1 Month</option><option value="2">2 Months</option><option value="3">3 Months</option></select>
+                <button class="btn" onclick="app.createStaff()" style="border-color:var(--pink); color:var(--pink)">Create Account</button>
+            </div>
+            <div class="card"><h3 id="manage-title" style="color:var(--pink)">Account Management</h3><div class="table-container"><table><thead><tr><th>User</th><th>Bal</th><th>Exp</th><th>Stat</th><th>Action</th></tr></thead><tbody id="manage-staff-list"></tbody></table></div></div>
+        </div>
+
+        <!-- Logs -->
+        <div id="tab-logs" class="hidden"><div class="card" style="border-left-color:var(--green)"><h3>History Logs</h3><div id="log-list" style="font-size:10px; line-height:1.6; font-family:monospace; color:#888;"></div></div></div>
+
+        <!-- Setup -->
+        <div id="tab-settings" class="hidden">
+            <div class="card owner-only hidden" style="border-left-color: var(--blue);">
+                <h3>Price Matrix</h3>
+                <div class="price-row"><span>5h:</span> <input type="number" id="p-5h"></div>
+                <div class="price-row"><span>1d:</span> <input type="number" id="p-1d"></div>
+                <div class="price-row"><span>7d:</span> <input type="number" id="p-7d"></div>
+                <div class="price-row"><span>14d:</span> <input type="number" id="p-14d"></div>
+                <div class="price-row"><span>30d:</span> <input type="number" id="p-30d"></div>
+                <div class="price-row"><span>60d:</span> <input type="number" id="p-60d"></div>
+                <div class="price-row"><span>Life:</span> <input type="number" id="p-LIFETIME"></div>
+                <button class="btn" onclick="app.savePricing()" style="border-color:var(--green); color:var(--green)">Update Matrix</button>
+            </div>
+            <div class="card">
+                <h3>System Branding</h3>
+                <input type="text" id="set-brand" placeholder="Brand Name">
+                <input type="text" id="set-tg" placeholder="Telegram Link">
+                <button class="btn" onclick="app.saveSettings()">Sync System</button>
+            </div>
+            <div class="card" style="border-left-color: var(--orange);">
+                <h3 style="color:var(--orange)">Account Security</h3>
+                <input type="password" id="set-new-pass" placeholder="Change My Password">
+                <button class="btn" onclick="app.updatePassword()" style="border-color:var(--orange); color:var(--orange)">Change Password</button>
+            </div>
+            <button class="btn" onclick="app.logout()" style="border-color:red; color:red; margin-top:15px">Logout Panel</button>
+        </div>
+    </div>
+
+    <a href="#" id="tg-support" class="tg-btn" target="_blank"><i class="fab fa-telegram-plane"></i></a>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyDRpY5f4_SPuuspfed3UkxG99gByr9rqH8",
+            authDomain: "host-panel-fd943.firebaseapp.com",
+            projectId: "host-panel-fd943",
+            storageBucket: "host-panel-fd943.firebasestorage.app",
+            messagingSenderId: "75573266168",
+            appId: "1:75573266168:web:1db02b2665c4431e495d0d"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+        let kChart, sChart;
+
+        const app = {
+            user: null, userData: null, pricing: {},
+            login: function() {
+                const u = document.getElementById('log-user').value.trim();
+                const p = document.getElementById('log-pass').value.trim();
+                auth.signInWithEmailAndPassword(u + "@panel.com", p).catch(e => alert(e.message));
+            },
+            logout: function() { auth.signOut().then(() => location.reload()); },
+            tab: function(t, el) {
+                ['dash','keys','staff','logs','settings'].forEach(id => document.getElementById('tab-'+id).classList.add('hidden'));
+                document.getElementById('tab-'+t).classList.remove('hidden');
+                document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+                el.classList.add('active');
+                document.getElementById('tg-support').style.display = (t === 'logs') ? 'flex' : 'none';
+            },
+            copy: function(t) { const ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); alert("Copied!"); },
+            checkPrice: function() { const t = document.getElementById('key-time').value; const c = this.pricing[t] || 0; document.getElementById('price-display').innerText = "Cost: " + c + " Credits"; },
+            updateDropdown: function() {
+                const sel = document.getElementById('key-time');
+                for (let i = 0; i < sel.options.length; i++) {
+                    const v = sel.options[i].value; const p = this.pricing[v] || 0;
+                    const txt = sel.options[i].text.split(' - ')[0];
+                    sel.options[i].text = `${txt} - (₹${p})`;
+                }
+            },
+            generateKey: async function() {
+                const n = document.getElementById('key-name').value.trim();
+                const l = document.getElementById('key-limit').value;
+                const t = document.getElementById('key-time').value;
+                const c = this.pricing[t] || 0;
+                if (t === 'LIFETIME' && this.userData.role === 'reseller') return alert("Restricted!");
+                if (this.userData.role !== 'owner' && this.userData.balance < c) return alert("Low Credits!");
+                if (!n || !l) return alert("Fill Name/Limit!");
+                let exp = new Date();
+                if(t.includes('h')) exp.setHours(exp.getHours() + parseInt(t)); else if(t !== 'LIFETIME') exp.setDate(exp.getDate() + parseInt(t)); else exp.setFullYear(exp.getFullYear() + 10);
+                const rootId = (this.userData.role === 'admin' || this.userData.role === 'owner') ? this.user.uid : this.userData.createdBy;
+                await db.collection("keys").add({ key: n, customer: n, limit: parseInt(l), devicesUsed: [], duration: t, expiry: exp, adminId: this.user.uid, adminName: this.userData.username, rootAdminId: rootId, status: "active", createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+                if(this.userData.role !== 'owner') await db.collection("users").doc(this.user.uid).update({ balance: firebase.firestore.FieldValue.increment(-c) });
+                this.copy(n); document.getElementById('key-name').value = "";
+            },
+            updatePassword: function() {
+                const newP = document.getElementById('set-new-pass').value.trim();
+                if(newP.length < 6) return alert("Min 6 chars!");
+                auth.currentUser.updatePassword(newP).then(() => alert("Success!")).catch(e => alert(e.message));
+            },
+            createStaff: async function() {
+                const u = document.getElementById('new-user').value.trim(); const p = document.getElementById('new-pass').value.trim(); const r = document.getElementById('new-role').value; const m = parseInt(document.getElementById('new-expiry').value); const exp = new Date(); exp.setMonth(exp.getMonth() + m);
+                try {
+                    const secApp = firebase.initializeApp(firebaseConfig, "Sec");
+                    const cred = await firebase.auth(secApp).createUserWithEmailAndPassword(u + "@panel.com", p);
+                    await db.collection("users").doc(cred.user.uid).set({ username: u, role: r, balance: 0, status: "active", expiry: exp, createdBy: this.user.uid, brandName: "VIP PANEL", telegram: "" });
+                    await firebase.auth(secApp).signOut(); await secApp.delete(); alert("Staff Account Created!");
+                } catch(e) { alert(e.message); }
+            },
+            saveSettings: function() { db.collection("users").doc(this.user.uid).update({ brandName: document.getElementById('set-brand').value, telegram: document.getElementById('set-tg').value }).then(() => alert("Synced!")); },
+            savePricing: function() {
+                const p = { "5h": parseInt(document.getElementById('p-5h').value||0), "1d": parseInt(document.getElementById('p-1d').value||0), "7d": parseInt(document.getElementById('p-7d').value||0), "14d": parseInt(document.getElementById('p-14d').value||0), "30d": parseInt(document.getElementById('p-30d').value||0), "60d": parseInt(document.getElementById('p-60d').value||0), "LIFETIME": parseInt(document.getElementById('p-LIFETIME').value||0) };
+                db.collection("settings").doc("pricing").set(p).then(() => alert("Matrix Updated!"));
+            },
+            initCharts: function() {
+                const ctxK = document.getElementById('keysChart').getContext('2d');
+                kChart = new Chart(ctxK, { type: 'line', data: { labels: ['6d','5d','4d','3d','2d','1d','Now'], datasets: [{ label: 'Keys', data: [0,0,0,0,0,0,1], borderColor: '#00f3ff', backgroundColor: 'rgba(0,243,255,0.05)', fill: true, tension: 0.4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { grid: { color: '#222' }, ticks: { color: '#555', font: { size: 9 } } } } } });
+                const ctxS = document.getElementById('staffChart').getContext('2d');
+                if(ctxS) { sChart = new Chart(ctxS, { type: 'line', data: { labels: ['6d','5d','4d','3d','2d','1d','Now'], datasets: [{ label: 'Staff', data: [0,0,0,0,0,0,1], borderColor: '#ff00ff', backgroundColor: 'rgba(255,0,255,0.05)', fill: true, tension: 0.4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { grid: { color: '#222' }, ticks: { color: '#555', font: { size: 9 } } } } } }); }
+            }
+        };
+
+        auth.onAuthStateChanged(async (u) => {
+            if (u) {
+                db.collection("users").doc(u.uid).onSnapshot(doc => {
+                    if(!doc.exists) return;
+                    const d = doc.data();
+                    if(d.status === 'banned') { alert("Access Revoked!"); auth.signOut(); location.reload(); return; }
+                    app.user = u; app.userData = d;
+                    document.getElementById('login-overlay').style.display = 'none';
+                    document.getElementById('disp-user').innerText = d.username;
+                    document.getElementById('disp-role').innerText = d.role.toUpperCase();
+                    document.getElementById('disp-bal').innerText = d.role === 'owner' ? "∞" : d.balance;
+                    document.getElementById('disp-brand-top').innerText = d.brandName;
+                    document.getElementById('set-brand').value = d.brandName;
+                    document.getElementById('set-tg').value = d.telegram || "";
+                    if(d.expiry) { document.getElementById('expiry-box').style.display = 'block'; document.getElementById('disp-expiry').innerText = d.expiry.toDate().toLocaleDateString(); }
+                });
+
+                const ud = await db.collection("users").doc(u.uid).get();
+                const r = ud.data().role;
+                if(r === 'reseller') document.getElementById('opt-lifetime').remove();
+                document.getElementById('new-role').innerHTML = r === 'admin' ? '<option value="reseller">Reseller</option>' : '<option value="admin">Admin</option><option value="reseller">Reseller</option>';
+                app.initCharts();
+                if(r === 'owner' || r === 'admin') document.querySelectorAll('.owner-admin-only').forEach(e => e.classList.remove('hidden'));
+                if(r === 'owner') document.querySelectorAll('.owner-only').forEach(e => e.classList.remove('hidden'));
+                db.collection("settings").doc("pricing").onSnapshot(s => { if(s.exists) { app.pricing = s.data(); for(let k in app.pricing) { if(document.getElementById('p-'+k)) document.getElementById('p-'+k).value = app.pricing[k]; } app.updateDropdown(); app.checkPrice(); } });
+
+                db.collection("keys").orderBy("createdAt", "desc").onSnapshot(snap => {
+                    const list = document.getElementById('key-list'); list.innerHTML = "";
+                    let kc = 0;
+                    snap.forEach(d => {
+                        const k = d.data(); const used = k.devicesUsed ? k.devicesUsed.length : 0;
+                        if(app.userData.role === 'owner' || k.adminId === u.uid) { kc++;
+                            list.innerHTML += `<tr><td>${k.key}</td><td style="color:${used>=k.limit?'red':'var(--green)'}">${used}/${k.limit}</td><td>${k.duration}</td><td>${k.adminName}</td>
+                            <td><i class="fas fa-copy action-icon" style="color:var(--blue)" onclick="app.copy('${k.key}')"></i><i class="fas fa-sync-alt action-icon" style="color:orange" onclick="db.collection('keys').doc('${d.id}').update({devicesUsed:[]})"></i><i class="fas fa-trash action-icon" style="color:red" onclick="if(confirm('Delete?')) db.collection('keys').doc('${d.id}').delete()"></i></td></tr>`;
+                        }
+                    });
+                    if(kChart) { kChart.data.datasets[0].data[6] = kc; kChart.update(); }
+                });
+
+                let sq = r === 'owner' ? db.collection("users") : db.collection("users").where("createdBy", "==", u.uid);
+                sq.onSnapshot(snap => {
+                    const list = document.getElementById('manage-staff-list'); list.innerHTML = "";
+                    let sc = 0;
+                    snap.forEach(d => {
+                        const s = d.data(); if(d.id !== u.uid) { sc++;
+                            list.innerHTML += `<tr><td>${s.username}</td><td>${s.balance}</td><td>${s.expiry?s.expiry.toDate().toLocaleDateString():'-'}</td><td style="color:${s.status=='active'?'var(--green)':'red'}">${s.status.toUpperCase()}</td>
+                            <td><i class="fas fa-plus-circle action-icon" style="color:var(--blue)" onclick="const a=parseInt(prompt('Credits?')); if(a){db.collection('users').doc('${d.id}').update({balance:firebase.firestore.FieldValue.increment(a)})}"></i>
+                            <i class="fas ${s.status=='active'?'fa-ban':'fa-check-circle'} action-icon" style="color:${s.status=='active'?'red':'green'}" onclick="db.collection('users').doc('${d.id}').update({status:s.status=='active'?'banned':'active'})"></i></td></tr>`;
+                        }
+                    });
+                    if(sChart) { sChart.data.datasets[0].data[6] = sc; sChart.update(); }
+                });
+
+                if(r === 'owner') document.getElementById('tg-support').href = app.userData.telegram || "#";
+                else { const up = await db.collection("users").doc(ud.data().createdBy || "OWNER").get(); document.getElementById('tg-support').href = up.exists ? up.data().telegram : "#"; }
+                db.collection("logs").orderBy("time", "desc").limit(10).onSnapshot(snap => {
+                    const list = document.getElementById('log-list'); list.innerHTML = "";
+                    snap.forEach(d => { list.innerHTML += `<div>> [${d.data().by}] ${d.data().msg}</div>`; });
+                });
+                const now = new Date();
+                db.collection("keys").where("expiry", "<", now).get().then(snap => snap.forEach(doc => doc.ref.delete()));
+            }
+        });
+    </script>
+</body>
+</html>
